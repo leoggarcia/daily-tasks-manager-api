@@ -1,30 +1,31 @@
-import { Task } from 'src/tasks/entities/task.entity';
+import { User } from 'src/users/entities/user.entity';
 import {
   Column,
   CreateDateColumn,
   DeleteDateColumn,
   Entity,
-  OneToMany,
+  ManyToMany,
+  ManyToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
 
 @Entity()
-export class User {
+export class Task {
   @PrimaryGeneratedColumn()
   id: Number;
 
   @Column()
-  full_name: string;
+  title: string;
 
   @Column()
-  email: string;
+  description: string;
 
   @Column()
-  password: string;
+  schedule_date: Date;
 
-  @OneToMany((type) => Task, (task) => task.user)
-  tasks: Task[];
+  @ManyToOne(() => User, (user) => user.tasks)
+  user: User;
 
   @CreateDateColumn({ type: 'datetime' })
   created_at: Date;
