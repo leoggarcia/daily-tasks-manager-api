@@ -25,8 +25,8 @@ These instructions will get you a copy of the project up and running on your loc
 
 1.  Clone the repository:
     ```bash
-    git clone https://github.com/your-username/daily-tasks-manager.git
-    cd daily-tasks-manager
+    git clone https://github.com/leoggarcia/daily-tasks-manager-api.git
+    cd daily-tasks-manager-api
     ```
 2.  Install the dependencies:
     ```bash

@@ -21,7 +21,7 @@ export class AuthService {
     const user = await this.usersService.findOneByEmail(signInDto.email);
 
     if (user instanceof HttpException) {
-      return new UnauthorizedException();
+      throw new HttpException("Wrong email or password", HttpStatus.UNAUTHORIZED);
     }
 
     const passwordIsValid = await bcrypt.compare(
@@ -30,7 +30,7 @@ export class AuthService {
     );
 
     if (!passwordIsValid) {
-      return new UnauthorizedException();
+      throw new UnauthorizedException();
     }
 
     const payload = {
@@ -38,12 +38,60 @@ export class AuthService {
       email: user.email,
     };
 
+    const { password, ...restOfUser } = user;
+
+    const accessToken = await this.jwtService.signAsync(payload, {
+      expiresIn: '15m',
+    });
+    const refreshToken = await this.jwtService.signAsync(payload, {
+      expiresIn: '7d',
+    });
+
     return {
-      access_token: await this.jwtService.signAsync(payload),
+      access_token: accessToken,
+      refresh_token: refreshToken,
+      user: restOfUser,
     };
   }
 
   async signUp(createUserDto: CreateUserDto) {
     return this.usersService.create(createUserDto);
+  }
+
+  async refreshTokens(userId: number, refreshToken: string) {
+    const user = await this.usersService.findOne(userId);
+
+    if (user instanceof HttpException) {
+      throw new UnauthorizedException();
+    }
+
+    if (!user || !user.refresh_token) {
+      throw new UnauthorizedException();
+    }
+
+    const tokenMatch = await bcrypt.compare(refreshToken, user.refresh_token);
+
+    if (!tokenMatch) {
+      throw new UnauthorizedException();
+    }
+
+    const payload = {
+      sub: user.id,
+      email: user.email,
+    };
+
+    const newAccessToken = await this.jwtService.signAsync(payload, {
+      expiresIn: '15m',
+    });
+    const newRefreshToken = await this.jwtService.signAsync(payload, {
+      expiresIn: '7d',
+    });
+
+    this.usersService.updateRefreshToken(userId, newRefreshToken);
+
+    return {
+      access_token: newAccessToken,
+      refresh_token: newRefreshToken,
+    };
   }
 }

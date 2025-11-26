@@ -13,7 +13,7 @@ import {
 @Entity()
 export class Task {
   @PrimaryGeneratedColumn()
-  id: Number;
+  id: number;
 
   @Column()
   title: string;

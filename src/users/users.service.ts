@@ -4,7 +4,7 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from './entities/user.entity';
 import { Repository } from 'typeorm';
-import * as bcrypt from "bcrypt"
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class UsersService {
@@ -38,16 +38,16 @@ export class UsersService {
     return userWithoutPassword;
   }
 
-  async findOne(id: number) {
+  async findOne(id: number): Promise<Omit<User, 'password'>> {
     const user = await this.usersRepository.findOneBy({ id: id });
 
     if (!user) {
-      return new HttpException('User not found', HttpStatus.NOT_FOUND);
+      throw new HttpException('User not found', HttpStatus.NOT_FOUND);
     }
 
     const { password, ...userWithOutPass } = user;
 
-    return userWithOutPass;
+    return userWithOutPass as Omit<User, 'password'>;
   }
 
   async findOneByEmail(email: string) {
@@ -69,6 +69,13 @@ export class UsersService {
 
     const updated = this.usersRepository.merge(user as User, updateUserDto);
     return this.usersRepository.save(updated);
+  }
+
+  async updateRefreshToken(id: number, newRefreshToken: string) {
+    const user = await this.findOne(id);
+
+    user.refresh_token = newRefreshToken;
+    await this.usersRepository.save(user);
   }
 
   async remove(id: number) {

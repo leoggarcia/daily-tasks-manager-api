@@ -12,7 +12,7 @@ import {
 @Entity()
 export class User {
   @PrimaryGeneratedColumn()
-  id: Number;
+  id: number;
 
   @Column()
   full_name: string;
@@ -22,6 +22,11 @@ export class User {
 
   @Column()
   password: string;
+
+  @Column({
+    nullable: true
+  })
+  refresh_token: string;
 
   @OneToMany((type) => Task, (task) => task.user)
   tasks: Task[];
