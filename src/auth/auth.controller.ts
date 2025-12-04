@@ -5,6 +5,7 @@ import {
   Req,
   Res,
   UnauthorizedException,
+  UseGuards,
 } from '@nestjs/common';
 import { SignInDto } from './dto/sign-in.dto';
 import { AuthService } from './auth.service';
@@ -13,7 +14,9 @@ import { CreateUserDto } from 'src/users/dto/create-user.dto';
 import type { Request, Response } from 'express';
 import { GetUser } from './get-user.decorator';
 import { User } from 'src/users/entities/user.entity';
+import { AuthGuard } from './auth.guard';
 
+@UseGuards(AuthGuard)
 @Controller('auth')
 export class AuthController {
   constructor(private authService: AuthService) {}
@@ -29,9 +32,9 @@ export class AuthController {
 
     res.cookie('refresh_token', refresh_token, {
       httpOnly: true,
-      secure: true, // en producción true
-      sameSite: 'strict',
-      path: '/auth/refresh',
+      secure: false, // en producción true
+      sameSite: 'strict', // en producción strict
+      path: '/',
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
@@ -44,11 +47,10 @@ export class AuthController {
     return this.authService.signUp(createUserDto);
   }
 
-  @Public()
   @Post('refresh')
   async refresh(
     @Req() req: Request,
-    @Res() res: Response,
+    @Res({ passthrough: true }) res: Response,
     @GetUser() user: User,
   ) {
     const refreshToken = req.cookies['refresh_token'];
@@ -57,13 +59,13 @@ export class AuthController {
       throw new UnauthorizedException();
     }
 
-    const payload = await this.authService.refreshTokens(user.id, refreshToken);
+    const payload = await this.authService.refreshTokens(user, refreshToken);
 
     res.cookie('refresh_token', payload.refresh_token, {
       httpOnly: true,
-      secure: true,
-      sameSite: 'strict',
-      path: '/auth/refresh',
+      secure: false, // en producción true
+      sameSite: 'strict', // en producción strict
+      path: '/',
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 

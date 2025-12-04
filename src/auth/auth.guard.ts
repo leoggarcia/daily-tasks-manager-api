@@ -9,12 +9,14 @@ import { JwtService } from '@nestjs/jwt';
 import { Request } from 'express';
 import { Observable } from 'rxjs';
 import { IS_PUBLIC_KEY } from './auth.public.decorator';
+import { UsersService } from 'src/users/users.service';
 
 @Injectable()
 export class AuthGuard implements CanActivate {
   constructor(
     private jwtService: JwtService,
     private reflector: Reflector,
+    private readonly usersService: UsersService
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -39,7 +41,9 @@ export class AuthGuard implements CanActivate {
         secret: process.env.JWT_SECRET,
       });
 
-      request['user'] = payload;
+      const fullUser = await this.getFullUser(payload.sub);
+
+      request['user'] = fullUser;
     } catch {
       throw new UnauthorizedException();
     }
@@ -48,8 +52,26 @@ export class AuthGuard implements CanActivate {
   }
 
   private extractTokenFomHeader(request: Request) {
-    const [type, token] = request.headers.authorization?.split(' ') ?? [];
+    const authHeader = request.headers.authorization;
+    if (authHeader) {
+      const [type, token] = authHeader?.split(' ') ?? [];
 
-    return type === 'Bearer' ? token : undefined;
+      if(token && type === 'Bearer'){
+        return token
+      }
+    }
+
+    const refreshToken = request.cookies["refresh_token"];
+    if(refreshToken){
+      return refreshToken
+    }
+
+    return undefined;
+  }
+  
+  private async getFullUser(id: number){
+    const user = await this.usersService.findOne(id)
+
+    return user
   }
 }

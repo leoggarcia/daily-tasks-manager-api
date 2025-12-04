@@ -9,6 +9,7 @@ import { UsersService } from '../users/users.service';
 import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
 import { CreateUserDto } from 'src/users/dto/create-user.dto';
+import { User } from 'src/users/entities/user.entity';
 
 @Injectable()
 export class AuthService {
@@ -47,6 +48,8 @@ export class AuthService {
       expiresIn: '7d',
     });
 
+    this.usersService.updateRefreshToken(user.id, refreshToken)
+
     return {
       access_token: accessToken,
       refresh_token: refreshToken,
@@ -58,18 +61,12 @@ export class AuthService {
     return this.usersService.create(createUserDto);
   }
 
-  async refreshTokens(userId: number, refreshToken: string) {
-    const user = await this.usersService.findOne(userId);
-
-    if (user instanceof HttpException) {
-      throw new UnauthorizedException();
-    }
-
+  async refreshTokens(user: User, refreshToken: string) {
     if (!user || !user.refresh_token) {
       throw new UnauthorizedException();
     }
 
-    const tokenMatch = await bcrypt.compare(refreshToken, user.refresh_token);
+    const tokenMatch = refreshToken === user.refresh_token;
 
     if (!tokenMatch) {
       throw new UnauthorizedException();
@@ -87,7 +84,7 @@ export class AuthService {
       expiresIn: '7d',
     });
 
-    this.usersService.updateRefreshToken(userId, newRefreshToken);
+    this.usersService.updateRefreshToken(user.id, newRefreshToken);
 
     return {
       access_token: newAccessToken,
