@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Between, LessThanOrEqual, MoreThanOrEqual, Repository } from 'typeorm';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
 import { Task } from './entities/task.entity';
@@ -25,6 +25,24 @@ export class TasksService {
     return this.tasksRepository.find({
       where: { user: { id: user.id } },
     });
+  }
+
+  async findBetweenDays(
+    user: User,
+    startDate: Date,
+    endDate: Date,
+  ): Promise<Task[]> {
+    const tasks = await this.tasksRepository.find({
+      where: {
+        schedule_date: Between(startDate, endDate),
+        user: { id: user.id },
+      },
+      order: {
+        schedule_date: 'ASC',
+      },
+    });
+
+    return tasks;
   }
 
   async findOne(id: number, user: User): Promise<Task> {

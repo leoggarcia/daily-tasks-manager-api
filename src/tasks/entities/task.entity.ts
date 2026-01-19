@@ -23,6 +23,9 @@ export class Task {
 
   @Column()
   schedule_date: Date;
+  
+  @Column()
+  schedule_end_date: Date;
 
   @ManyToOne(() => User, (user) => user.tasks)
   user: User;

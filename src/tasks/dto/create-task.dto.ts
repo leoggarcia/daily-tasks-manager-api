@@ -14,4 +14,9 @@ export class CreateTaskDto {
   @Type(() => Date)
   @IsDate()
   schedule_date: Date;
+  
+  @IsNotEmpty()
+  @Type(() => Date)
+  @IsDate()
+  schedule_end_date: Date;
 }
